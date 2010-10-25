@@ -21,16 +21,16 @@ conn.redis.scard conn.key('workers'), (err, resp) ->
   assert.equal 2, resp
 
 # each worker has a tracked start date
-conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+conn.redis.exists conn.key('worker', worker1.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal true, resp
 
-conn.redis.exists conn.key('worker:2:started'), (err, resp) ->
+conn.redis.exists conn.key('worker', worker2.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal true, resp
 
 # set some fake stats for the workers
-conn.redis.incr conn.key('stat:failed:1')
+conn.redis.incr conn.key('stat:failed', worker1.name)
 
 worker1.untrack()
 
@@ -40,34 +40,34 @@ conn.redis.scard conn.key('workers'), (err, resp) ->
   assert.equal 1, resp
 
 # stats are still available
-conn.redis.exists conn.key('stat:failed:1'), (err, resp) ->
+conn.redis.exists conn.key('stat:failed', worker1.name), (err, resp) ->
   calls += 1
   assert.equal true, resp
 
 # untracked worker still has a start date
-conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+conn.redis.exists conn.key('worker', worker1.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal true, resp
   conn.end()
 
-worker1.purge()
+worker1.end()
 
 # worker stat is gone
-conn.redis.exists conn.key('stat:failed:1'), (err, resp) ->
+conn.redis.exists conn.key('stat:failed', worker1.name), (err, resp) ->
   calls += 1
   assert.equal false, resp
 
 # worker start date is gone
-conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+conn.redis.exists conn.key('worker', worker1.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal false, resp
 
-worker2.purge()
+worker2.end()
 
 # every key is gone
 conn.redis.keys '*', (err, resp) ->
   calls += 1
-  assert.deepEqual [], resp
+  assert.deepEqual [], resp || []
   conn.end()
 
 process.on 'exit', ->
