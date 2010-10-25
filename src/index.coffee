@@ -61,13 +61,17 @@ class Worker
     @name      = [options.name || 'node', process.pid, queues].join(":")
     @callbacks = options.callbacks || {}
     @running   = false
+    @ready     = false
     @checkQueues()
 
   # Public: Tracks the worker in Redis and starts polling.
   #
   # Returns nothing.
   start: ->
-    @init => @poll()
+    if @ready
+      @init => @poll()
+    else
+      @running = true
 
   # Public: Stops polling and purges this Worker's stats from Redis.
   # 
@@ -200,7 +204,14 @@ class Worker
   # Returns nothing.
   checkQueues: ->
     return if @queues.shift?
-    @queues = @queues.split(',')
+    if @queues == '*'
+      @redis.smembers @conn.key('queues'), (err, resp) =>
+        @queues = if resp then resp.sort() else []
+        @ready  = true
+        @start() if @running
+    else
+      @queues = @queues.split(',')
+      @ready = true
 
   # Builds a payload for the Resque failed list.
   #
