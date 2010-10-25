@@ -1,0 +1,75 @@
+require './helper'
+
+calls = 0
+conn  = resque()
+
+# no workers to start
+conn.redis.scard conn.key('workers'), (err, resp) ->
+  calls += 1
+  assert.equal 0, resp
+
+# start 2 workers
+worker1 = conn.worker '*', name: '1'
+worker2 = conn.worker '*', name: '2'
+
+worker1.init()
+worker2.init()
+
+# they're in the workers set
+conn.redis.scard conn.key('workers'), (err, resp) ->
+  calls += 1
+  assert.equal 2, resp
+
+# each worker has a tracked start date
+conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+  calls += 1
+  assert.equal true, resp
+
+conn.redis.exists conn.key('worker:2:started'), (err, resp) ->
+  calls += 1
+  assert.equal true, resp
+
+# set some fake stats for the workers
+conn.redis.incr conn.key('stat:failed:1')
+
+worker1.untrack()
+
+# its not in the workers set anymore
+conn.redis.scard conn.key('workers'), (err, resp) ->
+  calls += 1
+  assert.equal 1, resp
+
+# stats are still available
+conn.redis.exists conn.key('stat:failed:1'), (err, resp) ->
+  calls += 1
+  assert.equal true, resp
+
+# untracked worker still has a start date
+conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+  calls += 1
+  assert.equal true, resp
+  conn.end()
+
+worker1.purge()
+
+# worker stat is gone
+conn.redis.exists conn.key('stat:failed:1'), (err, resp) ->
+  calls += 1
+  assert.equal false, resp
+
+# worker start date is gone
+conn.redis.exists conn.key('worker:1:started'), (err, resp) ->
+  calls += 1
+  assert.equal false, resp
+
+worker2.purge()
+
+# every key is gone
+conn.redis.keys '*', (err, resp) ->
+  calls += 1
+  assert.deepEqual [], resp
+  conn.end()
+
+process.on 'exit', ->
+  assert.equal 10, calls
+  console.log '.'
