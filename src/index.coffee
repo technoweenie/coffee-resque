@@ -137,7 +137,9 @@ class Worker
   #
   # Returns nothing.
   perform: (job) ->
+    old_title = process.title
     @conn.emit 'job', @, @queue, job
+    @procline "#{@queue} job since #{(new Date).toString()}"
     try 
       if cb = @callbacks[job.class]
         cb job.args...
@@ -147,6 +149,7 @@ class Worker
     catch err
       @fail err, job
     finally
+      process.title = old_title
       @poll()
 
   # Tracks stats for successfully completed jobs.
@@ -178,6 +181,7 @@ class Worker
   # Returns nothing.
   pause: ->
     @untrack()
+    @procline "Sleeping for #{@conn.timeout/1000}s"
     setTimeout =>
       return if !@running
       @track()
@@ -203,6 +207,7 @@ class Worker
   init: (cb) ->
     @track()
     args = [@conn.key('worker', @name, 'started'), (new Date).toString()]
+    @procline "Processing #{@queues.toString} since #{args.last}"
     args.push cb if cb
     @redis.set args...
 
@@ -219,6 +224,14 @@ class Worker
     else
       @queues = @queues.split(',')
       @ready = true
+
+  # Sets the process title.
+  #
+  # msg - The String message for the title.
+  #
+  # Returns nothing.
+  procline: (msg) ->
+    process.title = "resque-#{exports.version}: #{msg}"
 
   # Builds a payload for the Resque failed list.
   #
@@ -241,6 +254,7 @@ connectToRedis = (options) ->
 
 exports.Connection = Connection
 exports.Worker     = Worker
+exports.version    = "0.1.0"
 
 # Sets up a new Worker.
 #
