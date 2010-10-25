@@ -87,6 +87,13 @@ class Worker
       @conn.key('stat', 'processed', @name)
     ], cb
 
+  # EVENT EMITTER PROXY
+
+  on: (event, callback) ->
+    @conn.on event, callback
+
+  # PRIVATE METHODS
+
   # Polls the next queue for a job.  Events are emitted directly on the 
   # Connection instance.
   #
@@ -245,6 +252,7 @@ exports.Worker     = Worker
 #                       (Default: resque).
 #           timeout   - Integer timeout in milliseconds to pause polling if 
 #                       the queue is empty.
+#           database  - Optional Integer of the Redis database to select.
 #           name      - String name of the Worker.  (Default: node).
 #           callbacks - Optional Object that has the job functions defined.
 #                       This will be taken from the Connection by default.
@@ -263,6 +271,7 @@ exports.worker = (queues, options) ->
 #                       (Default: resque).
 #           timeout   - Integer timeout in milliseconds to pause polling if 
 #                       the queue is empty.
+#           database  - Optional Integer of the Redis database to select.
 #           name      - String name of the Worker.  (Default: node).
 #
 # Returns a Connection instance.
