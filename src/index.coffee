@@ -5,6 +5,7 @@ class Connection extends EventEmitter
     @redis     = options.redis     || connectToRedis options
     @namespace = options.namespace || 'resque'
     @callbacks = options.callbacks || {}
+    @timeout   = options.timeout   || 100
     @redis.select options.database if options.database?
 
   # Public
@@ -43,14 +44,14 @@ class Worker
     @poll()
 
   # Public
-  end: ->
+  end: (cb) ->
     @running = false
     @untrack()
     @redis.del [
       @conn.key('worker', @name, 'started')
       @conn.key('stat', 'failed', @name)
       @conn.key('stat', 'processed', @name)
-    ]
+    ], cb
 
   poll: ->
     return if !@running
@@ -58,9 +59,10 @@ class Worker
     @queues.push @queue
     @conn.emit 'poll', @, @queue
     @redis.lpop @conn.key('queue', @queue), (err, resp) =>
-      if resp
+      if !err && resp
         @perform JSON.parse(resp.toString())
       else
+        @conn.emit err, @, @queue if err
         @pause()
 
   perform: (job) ->
@@ -94,7 +96,7 @@ class Worker
       return if !@running
       @track()
       @poll()
-    , 1000
+    , @conn.timeout
 
   track: ->
     @running = true

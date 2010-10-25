@@ -1,5 +1,5 @@
 require './helper'
-conn   = resque()
+conn   = resque timeout: 10
 
 conn.enqueue 'test',  'abc', 'first'
 conn.enqueue 'test',  'abc', 'fail'

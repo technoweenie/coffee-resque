@@ -48,7 +48,6 @@ conn.redis.exists conn.key('stat:failed', worker1.name), (err, resp) ->
 conn.redis.exists conn.key('worker', worker1.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal true, resp
-  conn.end()
 
 worker1.end()
 
@@ -62,13 +61,12 @@ conn.redis.exists conn.key('worker', worker1.name, 'started'), (err, resp) ->
   calls += 1
   assert.equal false, resp
 
-worker2.end()
-
-# every key is gone
-conn.redis.keys '*', (err, resp) ->
-  calls += 1
-  assert.deepEqual [], resp || []
-  conn.end()
+worker2.end ->
+  # every key is gone
+  conn.redis.scard conn.key('workers'), (err, resp) ->
+    assert.equal 0, resp
+    calls += 1
+    conn.end()
 
 process.on 'exit', ->
   assert.equal 10, calls
