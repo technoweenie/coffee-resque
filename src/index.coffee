@@ -50,7 +50,7 @@ class Worker
       @conn.key('worker', @name, 'started')
       @conn.key('stat', 'failed', @name)
       @conn.key('stat', 'processed', @name)
-    ], (err) => @redis.end()
+    ]
 
   poll: ->
     return if !@running
@@ -68,13 +68,25 @@ class Worker
     try 
       if cb = @callbacks[job.class]
         cb job.args...
-        @conn.emit 'success', @, @queue, job
+        @succeed job
       else
         throw "Missing Job: #{job.class}"
     catch err
-      @conn.emit 'error', err, @, @queue, job
+      @fail err, job
     finally
       @poll()
+
+  succeed: (job) ->
+    @redis.incr @conn.key('stat', 'processed')
+    @redis.incr @conn.key('stat', 'processed', @name)
+    @conn.emit 'success', @, @queue, job
+
+  fail: (err, job) ->
+    @redis.incr  @conn.key('stat', 'failed')
+    @redis.incr  @conn.key('stat', 'failed', @name)
+    @redis.rpush @conn.key('failed'),
+      JSON.stringify(@failurePayload(err, job))
+    @conn.emit 'error', err, @, @queue, job
 
   pause: ->
     @untrack()
@@ -98,6 +110,16 @@ class Worker
   checkQueues: ->
     return if @queues.shift?
     @queues = @queues.split(',')
+
+  failurePayload: (err, job) ->
+    {
+      worker: @name
+      error:  err.error || 'unspecified'
+      payload: job
+      exception: err.exception || 'generic'
+      backtrace: err.backtrace || ['unknown']
+      failed_at: (new Date).toString()
+    }
 
 connectToRedis = (options) ->
   require('../../node_redis').createClient options.port, options.host
