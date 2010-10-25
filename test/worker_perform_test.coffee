@@ -1,11 +1,11 @@
 require './helper'
 conn   = resque timeout: 10
 
-conn.enqueue 'test',  'abc', 'first'
-conn.enqueue 'test',  'abc', 'fail'
-conn.enqueue 'test2', 'def', 'missing'
-conn.enqueue 'test',  'abc', 'second'
-conn.enqueue 'test',  'abc', 'last'
+conn.enqueue 'test',  'abc', ['first']
+conn.enqueue 'test',  'abc', ['fail']
+conn.enqueue 'test2', 'def', ['missing']
+conn.enqueue 'test',  'abc', ['second']
+conn.enqueue 'test',  'abc', ['last']
 
 stats = {jobs: [], success: [], error: [], polls: 0}
 

@@ -17,10 +17,10 @@ class Connection extends EventEmitter
   # args  - Optional Array of arguments to pass.
   #
   # Returns nothing.
-  enqueue: (queue, func, args...) ->
+  enqueue: (queue, func, args) ->
     @redis.sadd  @key('queues'), queue
     @redis.rpush @key('queue', queue),
-      JSON.stringify class: func, args: args
+      JSON.stringify class: func, args: args || []
 
   # Public: Creates a single Worker from this Connection.
   #

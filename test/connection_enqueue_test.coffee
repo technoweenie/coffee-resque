@@ -26,7 +26,7 @@ conn.redis.rpop conn.key('queue', 'my-queue'), (err, resp) ->
   assert.equal 'some-function', data.class
   assert.deepEqual [],          data.args
 
-conn.enqueue 'my-queue', 'other-function', 'abc', 1
+conn.enqueue 'my-queue', 'other-function', ['abc', 1]
 
 conn.redis.rpop conn.key('queue', 'my-queue'), (err, resp) ->
   calls += 1
