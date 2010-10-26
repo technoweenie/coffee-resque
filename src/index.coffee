@@ -250,7 +250,7 @@ class Worker
     }
 
 connectToRedis = (options) ->
-  require('../../node_redis').createClient options.port, options.host
+  require('redis').createClient options.port, options.host
 
 exports.Connection = Connection
 exports.Worker     = Worker
