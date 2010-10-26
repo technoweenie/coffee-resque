@@ -43,8 +43,7 @@ countStats = ->
   conn.redis.get conn.key('stat', 'processed', worker.name), (err, resp) ->
     calls += 1
     assert.equal '3', resp.toString()
-    worker.end()
-    conn.end()
+    worker.end -> conn.end()
 
 calls = 0
 process.on 'exit', ->
