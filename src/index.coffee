@@ -7,7 +7,7 @@ class Connection extends EventEmitter
     @redis     = options.redis     || connectToRedis options
     @namespace = options.namespace || 'resque'
     @callbacks = options.callbacks || {}
-    @timeout   = options.timeout   || 100
+    @timeout   = options.timeout   || 5000
     @redis.select options.database if options.database?
 
   # Public: Queues a job in a given queue to be run.
