@@ -262,18 +262,18 @@ class Worker
   #
   # Returns a Hash.
   failurePayload: (err, job) ->
-    worker: @name
-    error:  err.error || 'unspecified'
-    payload: job
-    exception: err.exception || 'generic'
-    backtrace: err.backtrace || ['unknown']
+    worker:    @name
+    error:     err.error or 'unspecified'
+    payload:   job
+    exception: err.exception or 'generic'
+    backtrace: err.backtrace or ['unknown']
     failed_at: (new Date).toString()
 
   Object.defineProperty @prototype, 'name',
     get: -> @_name
     set: (name) ->
       @_name = if @ready
-        [name || 'node', process.pid, @queues].join(":")
+        [name or 'node', process.pid, @queues].join(":")
       else
         name
 
