@@ -43,17 +43,13 @@ class Connection extends EventEmitter
 
   # Public: Creates a single Worker from this Connection.
   #
-  # queues  - Either a comma separated String or Array of queue names.
-  # options - Optional Hash of options.
-  #           name      - String name of the Worker.  (Default: node)
-  #           callbacks - Optional Object that has the job functions defined.
-  #                       This will be taken from the Connection by default.
+  # queues    - Either a comma separated String or Array of queue names.
+  # callbacks - Optional Object that has the job functions defined.  This will
+  #             be taken from the Connection by default.
   #
   # Returns a Worker instance.
-  worker: (queues, options) ->
-    options           ||= {}
-    options.callbacks ||= @callbacks
-    new exports.Worker @, queues, options
+  worker: (queues, callbacks) ->
+    new exports.Worker @, queues, callbacks or @callbacks
 
   # Public: Quits the connection to the Redis server.
   #
@@ -73,12 +69,12 @@ class Connection extends EventEmitter
 # Handles the queue polling and job running.
 class Worker
   # See Connection#worker
-  constructor: (connection, queues, options) ->
+  constructor: (connection, queues, callbacks) ->
     @conn      = connection
     @redis     = connection.redis
     @queues    = queues
-    @name      = [options.name || 'node', process.pid, queues].join(":")
-    @callbacks = options.callbacks || {}
+    @callbacks = callbacks or {}
+    @name      = null
     @running   = false
     @ready     = false
     @checkQueues()
@@ -259,14 +255,17 @@ class Worker
   #
   # Returns a Hash.
   failurePayload: (err, job) ->
-    {
-      worker: @name
-      error:  err.error || 'unspecified'
-      payload: job
-      exception: err.exception || 'generic'
-      backtrace: err.backtrace || ['unknown']
-      failed_at: (new Date).toString()
-    }
+    worker: @name
+    error:  err.error || 'unspecified'
+    payload: job
+    exception: err.exception || 'generic'
+    backtrace: err.backtrace || ['unknown']
+    failed_at: (new Date).toString()
+
+  Object.defineProperty @prototype, 'name',
+    get: -> @_name
+    set: (name) ->
+      @_name = [name || 'node', process.pid, @queues].join(":")
 
 connectToRedis = (options) ->
   require('redis').createClient options.port, options.host

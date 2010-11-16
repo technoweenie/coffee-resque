@@ -9,8 +9,14 @@ conn.redis.scard conn.key('workers'), (err, resp) ->
   assert.equal 0, resp
 
 # start 2 workers
-worker1 = conn.worker '*', name: '1'
-worker2 = conn.worker '*', name: '2'
+worker1 = conn.worker '*'
+worker2 = conn.worker '*'
+
+worker1.name = '1'
+worker2.name = '2'
+
+assert.equal "1:#{process.pid}:*", worker1.name
+assert.equal "2:#{process.pid}:*", worker2.name
 
 worker1.init()
 worker2.init()
