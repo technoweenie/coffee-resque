@@ -18,9 +18,9 @@ Next, you'll want to setup a worker to handle these jobs.
     }
 
     // setup a worker
-    var worker = require('resque').worker('*', {
-      host: redisHost, port: redisPort,
-      callbacks: myJobs})
+    var worker = require('resque')
+      .connect({host: redisHost, port: redisPort})
+      .worker('*', {callbacks: myJobs})
 
     // some global event listeners
     //

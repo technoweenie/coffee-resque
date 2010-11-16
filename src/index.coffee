@@ -12,32 +12,10 @@ exports.version    = "0.1.0"
 #           timeout   - Integer timeout in milliseconds to pause polling if 
 #                       the queue is empty.
 #           database  - Optional Integer of the Redis database to select.
-#           name      - String name of the Worker.  (Default: node).
 #
 # Returns a Connection instance.
 exports.connect = (options) ->
   new exports.Connection options || {}
-
-# Sets up a new Worker.
-#
-# queues  - Either a comma separated String or Array of queue names.
-# options - Optional Hash of options.
-#           host       - String Redis host.  (Default: Redis' default)
-#           port       - Integer Redis port.  (Default: Redis' default)
-#           namespace  - String namespace prefix for Redis keys.  
-#                        (Default: resque).
-#           timeout    - Integer timeout in milliseconds to pause polling if 
-#                        the queue is empty.
-#           database   - Optional Integer of the Redis database to select.
-#           name       - String name of the Worker.  (Default: node).
-#           connection - Optional Connection instance.  Creates one if missing.
-#           callbacks  - Optional Object that has the job functions defined.
-#                        This will be taken from the Connection by default.
-#
-# Returns a Worker instance.
-exports.worker = (queues, options) ->
-  conn = options.connection or exports.connect options
-  conn.worker queues, options
 
 EventEmitter = require('events').EventEmitter
 
