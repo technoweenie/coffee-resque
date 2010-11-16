@@ -15,11 +15,14 @@ worker2 = conn.worker '*'
 worker1.name = '1'
 worker2.name = '2'
 
-assert.equal "1:#{process.pid}:*", worker1.name
-assert.equal "2:#{process.pid}:*", worker2.name
+# before Worker#checkQueues has finished.
+assert.equal "1", worker1.name
+assert.equal "2", worker2.name
 
-worker1.init()
-worker2.init()
+worker1.init ->
+  assert.equal "1:#{process.pid}:", worker1.name
+worker2.init ->
+  assert.equal "2:#{process.pid}:", worker2.name
 
 # they're in the workers set
 conn.redis.scard conn.key('workers'), (err, resp) ->

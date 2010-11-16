@@ -74,7 +74,6 @@ class Worker
     @redis     = connection.redis
     @queues    = queues
     @callbacks = callbacks or {}
-    @name      = null
     @running   = false
     @ready     = false
     @checkQueues()
@@ -235,10 +234,12 @@ class Worker
       @redis.smembers @conn.key('queues'), (err, resp) =>
         @queues = if resp then resp.sort() else []
         @ready  = true
+        @name   = @_name
         @start() if @running
     else
       @queues = @queues.split(',')
-      @ready = true
+      @ready  = true
+      @name   = @_name
 
   # Sets the process title.
   #
@@ -265,7 +266,10 @@ class Worker
   Object.defineProperty @prototype, 'name',
     get: -> @_name
     set: (name) ->
-      @_name = [name || 'node', process.pid, @queues].join(":")
+      @_name = if @ready
+        [name || 'node', process.pid, @queues].join(":")
+      else
+        name
 
 connectToRedis = (options) ->
   require('redis').createClient options.port, options.host
