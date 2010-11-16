@@ -103,13 +103,10 @@ class Worker
 
   # EVENT EMITTER PROXY
 
-  on: (event, callback) ->
-    @conn.on event, callback
-
-  # PRIVATE METHODS
-
-  # Polls the next queue for a job.  Events are emitted directly on the 
-  # Connection instance.
+  # Public: Attaches an event listener to the Connection instance.
+  #
+  # event    - String event name.
+  # listener - A Function callback for the emitted event.
   #
   # Emits 'poll' each time Redis is checked.
   #   err    - The caught exception.
@@ -131,6 +128,15 @@ class Worker
   #   worker - This Worker instance.
   #   queue  - The String queue that is being checked.
   #   job    - The parsed Job object that was being run.
+  #
+  # Returns nothing.
+  on: (event, listener) ->
+    @conn.on event, listener
+
+  # PRIVATE METHODS
+
+  # Polls the next queue for a job.  Events are emitted directly on the 
+  # Connection instance.
   #
   # Returns nothing.
   poll: ->
