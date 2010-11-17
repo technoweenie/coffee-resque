@@ -1,39 +1,39 @@
 require './helper'
-calls = 0
-conn  = resque()
+calls  = 0
+resque = connect()
 
-conn.redis.scard conn.key('queues'), (err, resp) ->
+resque.redis.scard resque.key('queues'), (err, resp) ->
   calls += 1
   assert.equal 0, resp
 
-conn.redis.llen conn.key('queue', 'my-queue'), (err, resp) ->
+resque.redis.llen resque.key('queue', 'my-queue'), (err, resp) ->
   calls += 1
   assert.equal 0, resp
 
-conn.enqueue 'my-queue', 'some-function'
+resque.enqueue 'my-queue', 'some-function'
 
-conn.redis.scard conn.key('queues'), (err, resp) ->
+resque.redis.scard resque.key('queues'), (err, resp) ->
   calls += 1
   assert.equal 1, resp
 
-conn.redis.llen conn.key('queue', 'my-queue'), (err, resp) ->
+resque.redis.llen resque.key('queue', 'my-queue'), (err, resp) ->
   calls += 1
   assert.equal 1, resp
 
-conn.redis.rpop conn.key('queue', 'my-queue'), (err, resp) ->
+resque.redis.rpop resque.key('queue', 'my-queue'), (err, resp) ->
   calls += 1
   data = JSON.parse resp
   assert.equal 'some-function', data.class
   assert.deepEqual [],          data.args
 
-conn.enqueue 'my-queue', 'other-function', ['abc', 1]
+resque.enqueue 'my-queue', 'other-function', ['abc', 1]
 
-conn.redis.rpop conn.key('queue', 'my-queue'), (err, resp) ->
+resque.redis.rpop resque.key('queue', 'my-queue'), (err, resp) ->
   calls += 1
   data = JSON.parse resp
   assert.equal 'other-function', data.class
   assert.deepEqual ['abc', 1],   data.args
-  conn.end()
+  resque.end()
 
 process.on 'exit', ->
   assert.equal 6, calls

@@ -1,18 +1,17 @@
 require './helper'
 
-conn = resque()
-conn.enqueue 'abc', 'def'
-conn.enqueue 'def', 'ghi'
+resque = connect()
+resque.enqueue 'abc', 'def'
+resque.enqueue 'def', 'ghi'
 
 queues = []
-conn.on 'error', (err, worker, queue) ->
+resque.on 'job', (queue, job) ->
   queues.push queue.toString()
   if queues.length == 2
-    worker.end()
-    conn.end()
+    resque.end()
     assert.deepEqual ['abc', 'def'], queues
 
-conn.worker('*').start()
+resque.poll('*')
 
 process.on 'exit', ->
   console.log '.'

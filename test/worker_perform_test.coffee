@@ -1,49 +1,48 @@
 require './helper'
-conn   = resque timeout: 10
+resque   = connect timeout: 10
 
-conn.enqueue 'test',  'abc', ['first']
-conn.enqueue 'test',  'abc', ['fail']
-conn.enqueue 'test2', 'def', ['missing']
-conn.enqueue 'test',  'abc', ['second']
-conn.enqueue 'test',  'abc', ['last']
+resque.enqueue 'test',  'abc', ['first']
+resque.enqueue 'test',  'abc', ['fail']
+resque.enqueue 'test2', 'def', ['missing']
+resque.enqueue 'test',  'abc', ['second']
+resque.enqueue 'test',  'abc', ['last']
 
 stats = {jobs: [], success: [], error: [], polls: 0}
 
-conn.on 'job', (worker, queue, job) ->
+resque.on 'job', (queue, job) ->
   stats.jobs.push [queue, job.args[0]]
 
-conn.on 'success', (worker, queue, job) ->
+resque.on 'success', (queue, job) ->
   stats.success.push job.args[0]
   if stats.success.length == 3
     countStats()
 
-conn.on 'error', (err, worker, queue, job) ->
+resque.on 'error', (err, queue, job) ->
   stats.error.push job.args[0]
 
-conn.on 'poll', (worker, queue) ->
+resque.on 'poll', (queue) ->
   stats.polls += 1
 
-conn.callbacks.abc = (arg) ->
+resque.callbacks.abc = (arg) ->
   if arg == 'fail'
     throw "Failing the job"
 
-worker = conn.worker('test,test2')
-worker.start()
+resque.poll('test,test2')
 
 countStats = ->
-  conn.redis.get conn.key('stat', 'failed'), (err, resp) ->
+  resque.redis.get resque.key('stat', 'failed'), (err, resp) ->
     calls += 1
     assert.equal '2', resp.toString()
-  conn.redis.get conn.key('stat', 'failed', worker.name), (err, resp) ->
+  resque.redis.get resque.key('stat', 'failed', resque.name), (err, resp) ->
     calls += 1
     assert.equal '2', resp.toString()
-  conn.redis.get conn.key('stat', 'processed'), (err, resp) ->
+  resque.redis.get resque.key('stat', 'processed'), (err, resp) ->
     calls += 1
     assert.equal '3', resp.toString()
-  conn.redis.get conn.key('stat', 'processed', worker.name), (err, resp) ->
+  resque.redis.get resque.key('stat', 'processed', resque.name), (err, resp) ->
     calls += 1
     assert.equal '3', resp.toString()
-    worker.end -> conn.end()
+    resque.end()
 
 calls = 0
 process.on 'exit', ->

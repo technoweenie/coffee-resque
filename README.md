@@ -53,7 +53,7 @@ Finally, you'll want to setup a worker to handle these jobs.
     // Triggered on every successful Job run.
     resque.on('success', function(queue, job) {})
 
-    resque.start('*')
+    resque.poll('*')
 
 ## Development
 

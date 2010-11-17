@@ -1,11 +1,11 @@
 require './helper'
-conn   = Resque.connect()
-assert.equal 'resque:foo:bar', conn.key('foo', 'bar')
-conn.end()
+resque   = Resque.connect()
+assert.equal 'resque:foo:bar', resque.key('foo', 'bar')
+resque.end()
 
-conn   = resque namespace: "test"
-assert.equal 'test:foo:bar', conn.key('foo', 'bar')
-conn.end()
+resque   = connect namespace: "test"
+assert.equal 'test:foo:bar', resque.key('foo', 'bar')
+resque.end()
 
 process.on 'exit', ->
   console.log '.'
