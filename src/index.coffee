@@ -114,13 +114,14 @@ class Worker extends EventEmitter
     @emit 'job', @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
 
-    has_listener = @emit "job:#{job.class}", job, (err) =>
-      if err
-        @fail err, job
-      else
-        @succeed job
-      process.title = old_title
-      @pop()
+    has_listener = 
+      @emit "job:#{job.class}", job, (err) =>
+        if err
+          @fail err, job
+        else
+          @succeed job
+        process.title = old_title
+        @pop()
 
     if !has_listener
       @fail {error: "No listener for #{job.class}"}, job
