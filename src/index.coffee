@@ -44,14 +44,16 @@ class Worker extends EventEmitter
     @namespace = options.namespace || 'resque'
     @callbacks = options.callbacks || {}
     @timeout   = options.timeout   || 5000
-    @redis.select options.database if options.database?
+    @name      = options.name
     @running   = false
     @ready     = false
+    @redis.select options.database if options.database?
 
   # queues - Either a comma separated String or Array of queue names.
   poll: (queues) ->
     if @ready
-      @init => @pop()
+      @init => 
+        @pop()
     else
       @checkQueues queues
 
@@ -74,18 +76,14 @@ class Worker extends EventEmitter
   # Public: Quits the connection to the Redis server.
   #
   # Returns nothing.
-  end: ->
+  end: (cb) ->
     if @running
-      @running = false
-      @untrack()
-      @redis.del [
-        @key('worker', @name, 'started')
-        @key('stat', 'failed', @name)
-        @key('stat', 'processed', @name)
-      ], => 
-        @redis.quit()
+      @cleanup =>
+        cb() if cb
+        @redis.end()
     else
-      @redis.quit()
+      cb() if cb
+      @redis.end()
 
   # PRIVATE METHODS
 
@@ -176,6 +174,17 @@ class Worker extends EventEmitter
   untrack: ->
     @redis.srem @key('workers'), @name
 
+  cleanup: (cb) ->
+    @running = false
+    @untrack()
+    args = [[
+      @key('worker', @name, 'started')
+      @key('stat', 'failed', @name)
+      @key('stat', 'processed', @name)
+    ]]
+    args.push cb if cb
+    @redis.del args...
+
   # Initializes this Worker's start date in Redis.
   #
   # Returns nothing.
@@ -237,6 +246,7 @@ class Worker extends EventEmitter
         [name or 'node', process.pid, @queues].join(":")
       else
         name
+      @_name
 
   # Builds a namespaced Redis key with the given arguments.
   #
