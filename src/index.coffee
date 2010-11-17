@@ -68,7 +68,7 @@ class Worker extends EventEmitter
   # Returns nothing.
   job: (job_class_name, func) ->
     @on "job:#{job_class_name}", (job, next) ->
-      func job.args..., next
+      func next, job.args...
 
   # Public: Queues a job in a given queue to be run.
   #

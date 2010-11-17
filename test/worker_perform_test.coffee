@@ -23,7 +23,7 @@ resque.on 'error', (err, queue, job) ->
 resque.on 'poll', (queue) ->
   stats.polls += 1
 
-resque.job 'abc', (arg, next) ->
+resque.job 'abc', (next, arg) ->
   try
     if arg == 'fail'
       throw "Failing the job"

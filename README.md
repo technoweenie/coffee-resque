@@ -13,7 +13,7 @@ First, you'll want to queue some jobs in your app:
 Next, create a job.  A job is just a function that takes a callback at the end.
 
     // myJobs.js
-    exports.add = function(a, b, next) {
+    exports.add = function(next, a, b) {
       try {
         a + b
         next()
@@ -35,7 +35,7 @@ Finally, you'll want to setup a worker to handle these jobs.
     resque.job('myJobs.add', myJobs.add)
 
     // add an ad-hoc job
-    resque.job('myJobs.subtract', function(a, b, next) {
+    resque.job('myJobs.subtract', function(next, a, b) {
       try {
         a - b
         next()
