@@ -16,6 +16,6 @@ publish: generate-js
 	@remove-js
 
 dev: generate-js
-	@coffee -wc --no-wrap -o lib src/*.coffee
+	@coffee -wc --bare -o lib src/*.coffee
 
 .PHONY: all
