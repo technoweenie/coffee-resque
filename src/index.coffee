@@ -12,22 +12,52 @@ exports.version    = "0.1.0"
 #           timeout   - Integer timeout in milliseconds to pause polling if 
 #                       the queue is empty.
 #           database  - Optional Integer of the Redis database to select.
+#           name      - Optional String name of the Worker.  (Default: node)
 #
 # Returns a Connection instance.
 exports.connect = (options) ->
-  new exports.Connection options || {}
+  new exports.Worker options || {}
 
 EventEmitter = require('events').EventEmitter
 
 # Handles the connection to the Redis server.  Connections also spawn worker
 # instances for processing jobs.
-class Connection extends EventEmitter
+#
+# Emits 'poll' each time Redis is checked.
+#   queue  - The String queue that is being checked.
+#
+# Emits 'job' before attempting to run any job.
+#   queue  - The String queue that is being checked.
+#   job    - The parsed Job object that was being run.
+#
+# Emits 'success' after a successful job completion.
+#   queue  - The String queue that is being checked.
+#   job    - The parsed Job object that was being run.
+#
+# Emits 'error' if there is an error fetching or running the job.
+#   err    - The caught exception.
+#   queue  - The String queue that is being checked.
+#   job    - The parsed Job object that was being run.
+class Worker extends EventEmitter
   constructor: (options) ->
     @redis     = options.redis     || connectToRedis options
     @namespace = options.namespace || 'resque'
     @callbacks = options.callbacks || {}
     @timeout   = options.timeout   || 5000
     @redis.select options.database if options.database?
+    @running   = false
+    @ready     = false
+
+  # queues - Either a comma separated String or Array of queue names.
+  poll: (queues) ->
+    if @ready
+      @init => @pop()
+    else
+      @checkQueues queues
+
+  job: (job_name, func) ->
+    @on "job:#{job_name}", (job, next) ->
+      func job.args..., next
 
   # Public: Queues a job in a given queue to be run.
   #
@@ -41,114 +71,37 @@ class Connection extends EventEmitter
     @redis.rpush @key('queue', queue),
       JSON.stringify class: func, args: args || []
 
-  # Public: Creates a single Worker from this Connection.
-  #
-  # queues    - Either a comma separated String or Array of queue names.
-  # callbacks - Optional Object that has the job functions defined.  This will
-  #             be taken from the Connection by default.
-  #
-  # Returns a Worker instance.
-  worker: (queues, callbacks) ->
-    new exports.Worker @, queues, callbacks or @callbacks
-
   # Public: Quits the connection to the Redis server.
   #
   # Returns nothing.
   end: ->
-    @redis.quit()
-
-  # Builds a namespaced Redis key with the given arguments.
-  #
-  # args - Array of Strings.
-  #
-  # Returns an assembled String key.
-  key: (args...) ->
-    args.unshift @namespace
-    args.join ":"
-
-# Handles the queue polling and job running.
-class Worker
-  # See Connection#worker
-  constructor: (connection, queues, callbacks) ->
-    @conn      = connection
-    @redis     = connection.redis
-    @queues    = queues
-    @callbacks = callbacks or {}
-    @running   = false
-    @ready     = false
-    @checkQueues()
-
-  # Public: Tracks the worker in Redis and starts polling.
-  #
-  # Returns nothing.
-  start: ->
-    if @ready
-      @init => @poll()
+    if @running
+      @running = false
+      @untrack()
+      @redis.del [
+        @key('worker', @name, 'started')
+        @key('stat', 'failed', @name)
+        @key('stat', 'processed', @name)
+      ], => 
+        @redis.quit()
     else
-      @running = true
-
-  # Public: Stops polling and purges this Worker's stats from Redis.
-  # 
-  # cb - Optional Function callback.
-  #
-  # Returns nothing.
-  end: (cb) ->
-    @running = false
-    @untrack()
-    @redis.del [
-      @conn.key('worker', @name, 'started')
-      @conn.key('stat', 'failed', @name)
-      @conn.key('stat', 'processed', @name)
-    ], cb
-
-  # EVENT EMITTER PROXY
-
-  # Public: Attaches an event listener to the Connection instance.
-  #
-  # event    - String event name.
-  # listener - A Function callback for the emitted event.
-  #
-  # Emits 'poll' each time Redis is checked.
-  #   err    - The caught exception.
-  #   worker - This Worker instance.
-  #   queue  - The String queue that is being checked.
-  #
-  # Emits 'job' before attempting to run any job.
-  #   worker - This Worker instance.
-  #   queue  - The String queue that is being checked.
-  #   job    - The parsed Job object that was being run.
-  #
-  # Emits 'success' after a successful job completion.
-  #   worker - This Worker instance.
-  #   queue  - The String queue that is being checked.
-  #   job    - The parsed Job object that was being run.
-  #
-  # Emits 'error' if there is an error fetching or running the job.
-  #   err    - The caught exception.
-  #   worker - This Worker instance.
-  #   queue  - The String queue that is being checked.
-  #   job    - The parsed Job object that was being run.
-  #
-  # Returns nothing.
-  on: (event, listener) ->
-    @conn.on event, listener
+      @redis.quit()
 
   # PRIVATE METHODS
 
-  # Polls the next queue for a job.  Events are emitted directly on the 
-  # Connection instance.
+  # Polls the next queue for a job.
   #
   # Returns nothing.
-  poll: ->
+  pop: ->
     return if !@running
     @queue = @queues.shift()
     @queues.push @queue
-    @conn.emit 'poll', @, @queue
-    @redis.lpop @conn.key('queue', @queue), (err, resp) =>
+    @emit 'poll', @queue
+    @redis.lpop @key('queue', @queue), (err, resp) =>
       if !err && resp
         @perform JSON.parse(resp.toString())
       else
-        @conn.emit 'error', err, @, @queue if err
+        @emit 'error', err, @queue if err
         @pause()
 
   # Handles the actual running of the job.
@@ -158,19 +111,20 @@ class Worker
   # Returns nothing.
   perform: (job) ->
     old_title = process.title
-    @conn.emit 'job', @, @queue, job
+    @emit 'job', @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
-    try 
-      if cb = @callbacks[job.class]
-        cb job.args...
-        @succeed job
+
+    has_listener = @emit "job:#{job.class}", job, (err) =>
+      if err
+        @fail err, job
       else
-        throw "Missing Job: #{job.class}"
-    catch err
-      @fail err, job
-    finally
+        @succeed job
       process.title = old_title
-      @poll()
+      @pop()
+
+    if !has_listener
+      @fail {error: "No listener for #{job.class}"}, job
+      @pop()
 
   # Tracks stats for successfully completed jobs.
   #
@@ -178,9 +132,9 @@ class Worker
   #
   # Returns nothing.
   succeed: (job) ->
-    @redis.incr @conn.key('stat', 'processed')
-    @redis.incr @conn.key('stat', 'processed', @name)
-    @conn.emit 'success', @, @queue, job
+    @redis.incr @key('stat', 'processed')
+    @redis.incr @key('stat', 'processed', @name)
+    @emit 'success', @queue, job
 
   # Tracks stats for failed jobs, and tracks them in a Redis list.
   #
@@ -189,11 +143,11 @@ class Worker
   #
   # Returns nothing.
   fail: (err, job) ->
-    @redis.incr  @conn.key('stat', 'failed')
-    @redis.incr  @conn.key('stat', 'failed', @name)
-    @redis.rpush @conn.key('failed'),
+    @redis.incr  @key('stat', 'failed')
+    @redis.incr  @key('stat', 'failed', @name)
+    @redis.rpush @key('failed'),
       JSON.stringify(@failurePayload(err, job))
-    @conn.emit 'error', err, @, @queue, job
+    @emit 'error', err, @queue, job
 
   # Pauses polling if no jobs are found.  Polling is resumed after the timeout
   # has passed.
@@ -201,32 +155,32 @@ class Worker
   # Returns nothing.
   pause: ->
     @untrack()
-    @procline "Sleeping for #{@conn.timeout/1000}s"
+    @procline "Sleeping for #{@timeout/1000}s"
     setTimeout =>
       return if !@running
       @track()
       @poll()
-    , @conn.timeout
+    , @timeout
 
   # Tracks this worker's name in Redis.
   #
   # Returns nothing.
   track: ->
     @running = true
-    @redis.sadd @conn.key('workers'), @name
+    @redis.sadd @key('workers'), @name
 
   # Removes this worker's name from Redis.
   #
   # Returns nothing.
   untrack: ->
-    @redis.srem @conn.key('workers'), @name
+    @redis.srem @key('workers'), @name
 
   # Initializes this Worker's start date in Redis.
   #
   # Returns nothing.
   init: (cb) ->
     @track()
-    args = [@conn.key('worker', @name, 'started'), (new Date).toString()]
+    args = [@key('worker', @name, 'started'), (new Date).toString()]
     @procline "Processing #{@queues.toString} since #{args.last}"
     args.push cb if cb
     @redis.set args...
@@ -234,18 +188,24 @@ class Worker
   # Ensures that the given @queues value is in the right format.
   #
   # Returns nothing.
-  checkQueues: ->
-    return if @queues.shift?
+  checkQueues: (queues) ->
+    @queues = queues
+    return if @queues.shift? # if it's an array, we're all set
     if @queues == '*'
-      @redis.smembers @conn.key('queues'), (err, resp) =>
-        @queues = if resp then resp.sort() else []
+      @redis.smembers @key('queues'), (err, resp) =>
+        @queues = []
+        if resp
+          resp.sort().forEach (q) =>
+            @queues.push q.toString()
+
         @ready  = true
         @name   = @_name
-        @start() if @running
+        @poll() if @running
     else
       @queues = @queues.split(',')
       @ready  = true
       @name   = @_name
+      @poll()
 
   # Sets the process title.
   #
@@ -277,8 +237,16 @@ class Worker
       else
         name
 
+  # Builds a namespaced Redis key with the given arguments.
+  #
+  # args - Array of Strings.
+  #
+  # Returns an assembled String key.
+  key: (args...) ->
+    args.unshift @namespace
+    args.join ":"
+
 connectToRedis = (options) ->
   require('redis').createClient options.port, options.host
 
-exports.Connection = Connection
-exports.Worker     = Worker
+exports.Worker = Worker

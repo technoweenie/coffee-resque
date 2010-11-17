@@ -23,9 +23,13 @@ resque.on 'error', (err, queue, job) ->
 resque.on 'poll', (queue) ->
   stats.polls += 1
 
-resque.callbacks.abc = (arg) ->
-  if arg == 'fail'
-    throw "Failing the job"
+resque.job 'abc', (arg, next) ->
+  try
+    if arg == 'fail'
+      throw "Failing the job"
+    next()
+  catch err
+    next err
 
 resque.poll('test,test2')
 
