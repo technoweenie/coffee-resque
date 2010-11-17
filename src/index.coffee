@@ -1,4 +1,4 @@
-exports.version    = "0.1.0"
+exports.version    = "0.2.0"
 
 # Sets up a new Resque Connection.  This Connection can either be used to 
 # queue new Resque jobs, or be passed into a worker through a `connection` 
@@ -49,7 +49,11 @@ class Worker extends EventEmitter
     @ready     = false
     @redis.select options.database if options.database?
 
+  # Starts the polling process for this worker.
+  #
   # queues - Either a comma separated String or Array of queue names.
+  #
+  # Returns nothing.
   poll: (queues) ->
     if @ready
       @init => 
@@ -57,8 +61,13 @@ class Worker extends EventEmitter
     else
       @checkQueues queues
 
-  job: (job_name, func) ->
-    @on "job:#{job_name}", (job, next) ->
+  # Binds a Resque "class" name to a given function.
+  #
+  # job_class_name - The String class name of the Resque job.
+  #
+  # Returns nothing.
+  job: (job_class_name, func) ->
+    @on "job:#{job_class_name}", (job, next) ->
       func job.args..., next
 
   # Public: Queues a job in a given queue to be run.
@@ -87,7 +96,13 @@ class Worker extends EventEmitter
 
   # PRIVATE METHODS
 
-  # Polls the next queue for a job.
+  # Polls the next queue for a job.  This algorithm is actually WRONG.  Resque
+  # should empty queues in the order they're given.  
+  #
+  #   CRITICAL => HIGH => MEDIUM => LOW
+  #
+  # All CRITICAL jobs should be complete before it's on to the next one.  All 
+  # HIGH jobs are done before MEDIUM, and so forth.
   #
   # Returns nothing.
   pop: ->
@@ -174,6 +189,11 @@ class Worker extends EventEmitter
   untrack: ->
     @redis.srem @key('workers'), @name
 
+  # Cleans up all mention of this worker from redis.
+  #
+  # cb - Optional Function called when the Redis DEL command completes.
+  #
+  # Returns nothing.
   cleanup: (cb) ->
     @running = false
     @untrack()
@@ -187,6 +207,8 @@ class Worker extends EventEmitter
 
   # Initializes this Worker's start date in Redis.
   #
+  # cb - Optional Function called when the Redis SET command completes.
+  #
   # Returns nothing.
   init: (cb) ->
     @track()
@@ -196,6 +218,8 @@ class Worker extends EventEmitter
     @redis.set args...
 
   # Ensures that the given @queues value is in the right format.
+  #
+  # queues - Either a comma separated String or Array of queue names.
   #
   # Returns nothing.
   checkQueues: (queues) ->
