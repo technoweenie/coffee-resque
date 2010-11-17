@@ -8,35 +8,52 @@ First, you'll want to queue some jobs in your app:
 
     var resque = require('resque').connect({
       host: redisHost, port: redisPort});
-    resque.enqueue('math', 'add', [1,2])
+    resque.enqueue('myJobs.add', 'add', [1,2])
 
-Next, you'll want to setup a worker to handle these jobs.
+Next, create a job.  A job is just a function that takes a callback at the end.
 
-    // implement your job functions
-    var myJobs = {
-      add: function(a, b) { a + b }
+    // myJobs.js
+    exports.add = function(a, b, next) {
+      try {
+        a + b
+        next()
+      catch(err) {
+        next(err)
+      }
     }
 
-    // setup a worker
-    var worker = require('resque')
-      .connect({host: redisHost, port: redisPort})
-      .worker('*', myJobs)
+Finally, you'll want to setup a worker to handle these jobs.
 
-    // some global event listeners
-    //
-    // Triggered every time the Worker polls.
-    worker.on('poll', function(worker, queue) {})
+    // get my jobs
+    var myJobs = require('myJobs')
+
+    // setup a worker
+    var resque = require('resque')
+      .connect({host: redisHost, port: redisPort})
+
+    // bind the myJobs.add function from above
+    resque.job('myJobs.add', myJobs.add)
+
+    // add an ad-hoc job
+    resque.job('myJobs.subtract', function(a, b, next) {
+      try {
+        a - b
+        next()
+      catch(err) {
+        next(err)
+      }
+    })
 
     // Triggered before a Job is attempted.
-    worker.on('job', function(worker, queue, job) {})
+    resque.on('job', function(queue, job) {})
 
     // Triggered every time a Job errors.
-    worker.on('error', function(err, worker, queue, job) {})
+    resque.on('error', function(err, queue, job) {})
 
     // Triggered on every successful Job run.
-    worker.on('success', function(worker, queue, job) {})
+    resque.on('success', function(queue, job) {})
 
-    worker.start()
+    resque.start('*')
 
 ## Development
 
