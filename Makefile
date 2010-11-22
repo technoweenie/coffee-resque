@@ -1,5 +1,5 @@
 generate-js: deps
-	@find src -name '*.coffee' | xargs coffee -c -o lib
+	@coffee -c --bare -o lib src/*.coffee
 
 remove-js:
 	@rm -fr lib/
@@ -16,6 +16,6 @@ publish: generate-js
 	@remove-js
 
 dev: generate-js
-	@coffee -wc --bare -o lib src/*.coffee
+	@coffee -wc -o lib --bare src/*.coffee
 
 .PHONY: all
