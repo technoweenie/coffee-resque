@@ -1,5 +1,5 @@
 generate-js: deps
-	@coffee -c --bare -o lib src/*.coffee
+	@coffee -c --bare -o lib src/
 
 remove-js:
 	@rm -fr lib/
@@ -16,6 +16,6 @@ publish: generate-js
 	@remove-js
 
 dev: generate-js
-	@coffee -wc -o lib --bare src/*.coffee
+	@coffee -wc --bare -o lib src/
 
 .PHONY: all
