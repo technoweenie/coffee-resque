@@ -1,0 +1,27 @@
+{
+    "name": "coffee-resque",
+    "version": "0.0.1",
+    "description": "Coffeescript/Node.js port of Resque",
+    "keywords": [
+        "coffee-resque"
+    ],
+    "maintainers": [
+        {
+            "name": "rick",
+            "email": "technoweenie@gmail.com",
+            "web": "http://techno-weenie.net"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/technoweenie/coffee-resque.git"
+        }
+    ],
+    "engines" : { "node" : ">=0.2.5" },
+    "directories": {
+        "lib": "lib"
+    },
+    "main": "./lib/index"
+}
+
