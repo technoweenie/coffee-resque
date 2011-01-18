@@ -2,11 +2,17 @@
 
 Coffeescript/Node.js port of Resque.  
 
+## INSTALLATION
+
+1. Clone the repo (`git clone https://github.com/jashkenas/coffee-script.git`)
+2. Generate the javascript (`make generate-js`)
+3. Install with npm (`npm install` or `npm link`)
+
 ## USAGE
 
 First, you'll want to queue some jobs in your app:
 
-    var resque = require('resque').connect({
+    var resque = require('coffee-resque').connect({
       host: redisHost, port: redisPort});
     resque.enqueue('math', 'add', [1,2])
 
@@ -18,7 +24,7 @@ Next, you'll want to setup a worker to handle these jobs.
     }
 
     // setup a worker
-    var worker = require('resque')
+    var worker = require('coffee-resque')
       .connect({host: redisHost, port: redisPort})
       .worker('*', myJobs)
 
