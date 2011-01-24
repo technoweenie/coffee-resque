@@ -25,7 +25,7 @@ class Connection extends EventEmitter
   constructor: (options) ->
     @redis     = options.redis     || connectToRedis options
     @namespace = options.namespace || 'resque'
-    @callbacks = options.callbacks || {}
+    @jobs      = options.jobs      || {}
     @timeout   = options.timeout   || 5000
     @redis.select options.database if options.database?
 
@@ -44,12 +44,12 @@ class Connection extends EventEmitter
   # Public: Creates a single Worker from this Connection.
   #
   # queues    - Either a comma separated String or Array of queue names.
-  # callbacks - Optional Object that has the job functions defined.  This will
+  # jobs      - Optional Object that has the job functions defined.  This will
   #             be taken from the Connection by default.
   #
   # Returns a Worker instance.
-  worker: (queues, callbacks) ->
-    new exports.Worker @, queues, callbacks or @callbacks
+  worker: (queues, jobs) ->
+    new exports.Worker @, queues, jobs or @jobs
 
   # Public: Quits the connection to the Redis server.
   #
@@ -69,11 +69,11 @@ class Connection extends EventEmitter
 # Handles the queue polling and job running.
 class Worker
   # See Connection#worker
-  constructor: (connection, queues, callbacks) ->
+  constructor: (connection, queues, jobs) ->
     @conn      = connection
     @redis     = connection.redis
     @queues    = queues
-    @callbacks = callbacks or {}
+    @jobs      = jobs or {}
     @running   = false
     @ready     = false
     @checkQueues()
@@ -161,7 +161,7 @@ class Worker
     @conn.emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
     try 
-      if cb = @callbacks[job.class]
+      if cb = @jobs[job.class]
         cb job.args...
         @succeed job
       else

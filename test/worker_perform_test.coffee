@@ -23,7 +23,7 @@ conn.on 'error', (err, worker, queue, job) ->
 conn.on 'poll', (worker, queue) ->
   stats.polls += 1
 
-conn.callbacks.abc = (arg) ->
+conn.jobs.abc = (arg) ->
   if arg == 'fail'
     throw "Failing the job"
 
