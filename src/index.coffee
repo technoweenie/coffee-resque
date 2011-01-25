@@ -24,6 +24,7 @@ EventEmitter = require('events').EventEmitter
 class Connection extends EventEmitter
   constructor: (options) ->
     @redis     = options.redis     || connectToRedis options
+    @redis_sub = options.redis_sub || connectToRedis options
     @namespace = options.namespace || 'resque'
     @jobs      = options.jobs      || {}
     @timeout   = options.timeout   || 5000
@@ -31,15 +32,21 @@ class Connection extends EventEmitter
 
   # Public: Queues a job in a given queue to be run.
   #
-  # queue - String queue name.
-  # func  - String name of the function to run.
-  # args  - Optional Array of arguments to pass.
+  # queue    - String queue name.
+  # func     - String name of the function to run.
+  # args     - Optional Array of arguments to pass.
+  # callback - Optional function to be called with results of job.
   #
   # Returns nothing.
-  enqueue: (queue, func, args) ->
-    @redis.sadd  @key('queues'), queue
-    @redis.rpush @key('queue', queue),
-      JSON.stringify class: func, args: args || []
+  enqueue: (queue, func, args, callback) ->
+    @jobID (err, id) =>
+      if err
+        throw err
+      else
+        @watchKey id, callback if callback
+        @redis.sadd  @key('queues'), queue
+        @redis.rpush @key('queue', queue),
+          JSON.stringify class: func, args: args || [], id: id
 
   # Public: Creates a single Worker from this Connection.
   #
@@ -56,6 +63,7 @@ class Connection extends EventEmitter
   # Returns nothing.
   end: ->
     @redis.quit()
+    @redis_sub.quit()
 
   # Builds a namespaced Redis key with the given arguments.
   #
@@ -65,6 +73,45 @@ class Connection extends EventEmitter
   key: (args...) ->
     args.unshift @namespace
     args.join ":"
+
+  # Generates a unique job id.
+  #
+  # Returns a unique job id.
+  jobID: (callback) ->
+    job_id = Math.floor(Math.random() * 1000000)
+    @redis.get job_id, (err, value) ->
+      if err
+        callback err
+      else if value
+        jobID callback
+      else
+        callback null, job_id
+
+  # Watches a key for changes
+  #
+  # key - name of key
+  #
+  # Calls callback with value of key on change.
+  watchKey: (key, callback) ->
+    @redis_sub.on 'message', (channel, message) =>
+      if channel is @key(key) and message is 'key changed'
+        @redis.get @key(key), (err, value) =>
+          if err
+            callback err
+          else
+            callback JSON.parse(value)...
+          @redis.del @key(key)
+    @redis_sub.subscribe @key(key)
+    
+  # Sets a key value and publishes an update to Redis.
+  #
+  # key   - name of key
+  # value - the value to set it to
+  #
+  # Returns nothing.
+  setKey: (key, value) ->
+    @redis.set @key(key), JSON.stringify(value)
+    @redis.publish @key(key), 'key changed'
 
 # Handles the queue polling and job running.
 class Worker
@@ -160,10 +207,11 @@ class Worker
     old_title = process.title
     @conn.emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
-    try 
-      if cb = @jobs[job.class]
-        cb job.args...
-        @succeed job
+    try
+      if j = @jobs[job.class]
+        j job.args..., (results...) =>
+          @conn.setKey job.id, results
+          @succeed job
       else
         throw "Missing Job: #{job.class}"
     catch err
@@ -279,6 +327,6 @@ class Worker
 
 connectToRedis = (options) ->
   require('redis').createClient options.port, options.host
-
+  
 exports.Connection = Connection
 exports.Worker     = Worker

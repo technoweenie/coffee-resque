@@ -1,7 +1,9 @@
 require './helper'
 conn   = resque timeout: 10
 
-conn.enqueue 'test',  'abc', ['first']
+conn.enqueue 'test',  'abc', ['first'], (err, result1, result2) ->
+  assert.ok result1, true
+  assert.ok result2, "yes"
 conn.enqueue 'test',  'abc', ['fail']
 conn.enqueue 'test2', 'def', ['missing']
 conn.enqueue 'test',  'abc', ['second']
@@ -23,9 +25,11 @@ conn.on 'error', (err, worker, queue, job) ->
 conn.on 'poll', (worker, queue) ->
   stats.polls += 1
 
-conn.jobs.abc = (arg) ->
+conn.jobs.abc = (arg, callback) ->
   if arg == 'fail'
     throw "Failing the job"
+  else
+    callback null, true, "yes"
 
 worker = conn.worker('test,test2')
 worker.start()
