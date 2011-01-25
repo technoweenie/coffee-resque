@@ -14,13 +14,19 @@ First, you'll want to queue some jobs in your app:
 
     var resque = require('coffee-resque').connect({
       host: redisHost, port: redisPort});
-    resque.enqueue('math', 'add', [1,2])
+    resque.enqueue('math', 'add', [1,2], function(err, result) {
+      console.log(result)
+    })
 
 Next, you'll want to setup a worker to handle these jobs.
 
     // implement your job functions
     var myJobs = {
-      add: function(a, b) { a + b }
+      add: function(a, b, callback) { 
+	  var result = a + b
+	  var error = null
+	  callback(error, result)
+	}
     }
 
     // setup a worker
