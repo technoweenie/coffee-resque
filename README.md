@@ -12,16 +12,18 @@ First, you'll want to queue some jobs in your app:
 
 Next, you'll want to setup a worker to handle these jobs.  	Upon 
 completion of the job invoke the passed callback with a result, 
-if a result was produced by the job, or an error if an error was 
-encountered.  An empty arg list passed to the callback indicates 
-successful completion of the job.  The callback is important as 
-it notifies resque that the worker has completed the current job 
-and is ready for another.  Neglecting to invoke the callback 
-will result in worker starvation.
+if a result was produced by the job, or an Error if an error was 
+encountered.  If an Error instance is received, resque fails the
+job, in all other cases it assumes the job was successfully.  
+The callback is important as it notifies resque that the worker 
+has completed the current job and is ready for another.  
+Neglecting to invoke the callback will result in worker starvation.
 
     // implement your job functions.  
     var myJobs = {
-      add: function(a, b, callback) { callback(null, a + b); }
+      add: function(a, b, callback) { callback(a + b); },
+      succeed: function(arg, callback) { callback(); },
+      fail: function(arg, callback) { callback(new Error('fail')); }
     }
 
     // setup a worker

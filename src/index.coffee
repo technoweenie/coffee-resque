@@ -165,8 +165,12 @@ class Worker
     @conn.emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
     if cb = @callbacks[job.class]
-      cb job.args..., (err, result) =>
-        try if err? then @fail err, job else @succeed job, result
+      cb job.args..., (result) =>
+        try 
+          if result instanceof Error 
+            @fail result, job
+          else 
+            @succeed result, job
         finally
           @poll old_title
     else
@@ -175,11 +179,11 @@ class Worker
 
   # Tracks stats for successfully completed jobs.
   #
-  # job    - The parsed Job object that is being run.
   # result - The result produced by the job. 
+  # job    - The parsed Job object that is being run.
   #
   # Returns nothing.
-  succeed: (job, result) ->
+  succeed: (result, job) ->
     @redis.incr @conn.key('stat', 'processed')
     @redis.incr @conn.key('stat', 'processed', @name)
     @conn.emit 'success', @, @queue, job, result

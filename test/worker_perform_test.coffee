@@ -24,10 +24,10 @@ conn.on 'poll', (worker, queue) ->
   stats.polls += 1
 
 conn.callbacks.abc = (arg, callback) ->
-  if arg is 'fail'
+  if arg == 'fail'
     callback new Error "Failing the job"
   else
-    callback null, 'pass'
+    callback 'pass'
 
 worker = conn.worker('test,test2')
 worker.start()
