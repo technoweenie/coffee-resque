@@ -15,6 +15,11 @@ publish: generate-js
 	npm publish
 	@remove-js
 
+install: generate-js
+	@test `which npm` || echo 'You need npm to do npm install... makes sense?'
+	npm install
+	@remove-js
+
 dev: generate-js
 	@coffee -wc --no-wrap -o lib src/*.coffee
 

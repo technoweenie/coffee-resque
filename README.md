@@ -10,11 +10,18 @@ First, you'll want to queue some jobs in your app:
       host: redisHost, port: redisPort});
     resque.enqueue('math', 'add', [1,2])
 
-Next, you'll want to setup a worker to handle these jobs.
+Next, you'll want to setup a worker to handle these jobs.  	Upon 
+completion of the job invoke the passed callback with a result, 
+if a result was produced by the job, or an error if an error was 
+encountered.  An empty arg list passed to the callback indicates 
+successful completion of the job.  The callback is important as 
+it notifies resque that the worker has completed the current job 
+and is ready for another.  Neglecting to invoke the callback 
+will result in worker starvation.
 
-    // implement your job functions
+    // implement your job functions.  
     var myJobs = {
-      add: function(a, b) { a + b }
+      add: function(a, b, callback) { callback(null, a + b); }
     }
 
     // setup a worker
@@ -34,7 +41,7 @@ Next, you'll want to setup a worker to handle these jobs.
     worker.on('error', function(err, worker, queue, job) {})
 
     // Triggered on every successful Job run.
-    worker.on('success', function(worker, queue, job) {})
+    worker.on('success', function(worker, queue, job, result) {})
 
     worker.start()
 

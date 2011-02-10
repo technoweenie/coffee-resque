@@ -122,6 +122,7 @@ class Worker
   #   worker - This Worker instance.
   #   queue  - The String queue that is being checked.
   #   job    - The parsed Job object that was being run.
+  #   result - The result produced by the job.
   #
   # Emits 'error' if there is an error fetching or running the job.
   #   err    - The caught exception.
@@ -138,9 +139,12 @@ class Worker
   # Polls the next queue for a job.  Events are emitted directly on the 
   # Connection instance.
   #
+  # title - The title to set on the running process (optional).
+  #
   # Returns nothing.
-  poll: ->
-    return if !@running
+  poll: (title) ->
+    return unless @running
+    process.title = title if title
     @queue = @queues.shift()
     @queues.push @queue
     @conn.emit 'poll', @, @queue
@@ -160,27 +164,25 @@ class Worker
     old_title = process.title
     @conn.emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
-    try 
-      if cb = @callbacks[job.class]
-        cb job.args...
-        @succeed job
-      else
-        throw "Missing Job: #{job.class}"
-    catch err
-      @fail err, job
-    finally
-      process.title = old_title
-      @poll()
+    if cb = @callbacks[job.class]
+      cb job.args..., (err, result) =>
+        try if err? then @fail err, job else @succeed job, result
+        finally
+          @poll old_title
+    else
+      @fail new Error("Missing Job: #{job.class}"), job
+      @poll old_title
 
   # Tracks stats for successfully completed jobs.
   #
-  # job - The parsed Job object that is being run.
+  # job    - The parsed Job object that is being run.
+  # result - The result produced by the job. 
   #
   # Returns nothing.
-  succeed: (job) ->
+  succeed: (job, result) ->
     @redis.incr @conn.key('stat', 'processed')
     @redis.incr @conn.key('stat', 'processed', @name)
-    @conn.emit 'success', @, @queue, job
+    @conn.emit 'success', @, @queue, job, result
 
   # Tracks stats for failed jobs, and tracks them in a Redis list.
   #
