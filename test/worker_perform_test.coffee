@@ -9,27 +9,28 @@ conn.enqueue 'test',  'abc', ['last']
 
 stats = {jobs: [], success: [], error: [], polls: 0}
 
-conn.on 'job', (worker, queue, job) ->
-  stats.jobs.push [queue, job.args[0]]
-
-conn.on 'success', (worker, queue, job) ->
-  stats.success.push job.args[0]
-  if stats.success.length == 3
-    countStats()
-
-conn.on 'error', (err, worker, queue, job) ->
-  stats.error.push job.args[0]
-
-conn.on 'poll', (worker, queue) ->
-  stats.polls += 1
-
 conn.callbacks.abc = (arg, callback) ->
-  if arg == 'fail'
+  if arg is 'fail'
     callback new Error "Failing the job"
   else
     callback 'pass'
 
 worker = conn.worker('test,test2')
+
+worker.on 'job', (worker, queue, job) ->
+  stats.jobs.push [queue, job.args[0]]
+
+worker.on 'success', (worker, queue, job) ->
+  stats.success.push job.args[0]
+  if stats.success.length == 3
+    countStats()
+
+worker.on 'error', (err, worker, queue, job) ->
+  stats.error.push job.args[0]
+
+worker.on 'poll', (worker, queue) ->
+  stats.polls += 1
+
 worker.start()
 
 countStats = ->
