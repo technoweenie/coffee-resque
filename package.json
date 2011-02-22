@@ -1,10 +1,12 @@
 {
-  "name": "coffee-resque",
-  "version": "0.0.1",
-  "description": "Coffeescript/Node.js port of Resque",
-  "keywords": ["coffee-resque"],
-  "dependencies": {"redis": ">= 0.5.2"},    
-  "engines" : {"node" : ">=0.2.6"},
-  "directories": {"lib": "lib"},
-  "main": "./lib/index"
+  "name"         : "coffee-resque",
+  "version"      : "0.1.0",
+  "description"  : "Coffeescript/Node.js port of Resque",
+  "keywords"     : ["coffee-resque"],
+  "homepage"     : "https://github.com/technoweenie/coffee-resque",
+  "main"         : "./lib/index",
+  "directories"  : {"lib"  : "./lib"},
+  "repository"   : {"type" : "git",  "url": "https://github.com/technoweenie/coffee-resque.git"},
+  "dependencies" : {"redis": ">= 0.5.2"},
+  "engines"      : {"node" : ">=0.2.6"}
 }
