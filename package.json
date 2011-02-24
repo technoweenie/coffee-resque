@@ -1,6 +1,6 @@
 {
   "name": "coffee-resque",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Coffeescript/Node.js port of Resque",
   "keywords": ["coffee-resque"],
   "dependencies": {"redis": ">= 0.5.2"},    
