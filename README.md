@@ -1,25 +1,27 @@
 # Coffee-Resque
 
-Coffeescript/Node.js port of Resque.  
+Coffeescript/Node.js port of Resque.
 
 ## USAGE
 
 First, you'll want to queue some jobs in your app:
 
-    var resque = require('resque').connect({
-      host: redisHost, port: redisPort});
-    resque.enqueue('math', 'add', [1,2])
+    var resque = require('coffee-resque').connect({
+      host: redisHost,
+      port: redisPort
+    });
+    resque.enqueue('math', 'add', [1,2]);
 
-Next, you'll want to setup a worker to handle these jobs.  	Upon 
-completion of the job invoke the passed callback with a result, 
-if a result was produced by the job, or an Error if an error was 
+Next, you'll want to setup a worker to handle these jobs.   Upon
+completion of the job invoke the passed callback with a result,
+if a result was produced by the job, or an Error if an error was
 encountered.  If an Error instance is received, resque fails the
-job, in all other cases it assumes the job was successfully.  
-The callback is important as it notifies resque that the worker 
-has completed the current job and is ready for another.  
+job, in all other cases it assumes the job was successfully.
+The callback is important as it notifies resque that the worker
+has completed the current job and is ready for another.
 Neglecting to invoke the callback will result in worker starvation.
 
-    // implement your job functions.  
+    // implement your job functions.
     var myJobs = {
       add: function(a, b, callback) { callback(a + b); },
       succeed: function(arg, callback) { callback(); },
@@ -27,9 +29,10 @@ Neglecting to invoke the callback will result in worker starvation.
     }
 
     // setup a worker
-    var worker = require('resque')
-      .connect({host: redisHost, port: redisPort})
-      .worker('*', myJobs)
+    var worker = require('coffee-resque').connect({
+      host: redisHost,
+      port: redisPort
+    }).worker('*', myJobs)
 
     // some global event listeners
     //
@@ -49,7 +52,7 @@ Neglecting to invoke the callback will result in worker starvation.
 
 ## Development
 
-All code is written in Coffee Script and converted to javascript as it's 
+All code is written in Coffee Script and converted to javascript as it's
 published to npm.
 
 For normal development, all you need to be concerned about is testing:
