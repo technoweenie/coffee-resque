@@ -1,4 +1,4 @@
-exports.version    = "0.1.0"
+exports.version    = "0.1.3"
 
 # Sets up a new Resque Connection.  This Connection can either be used to 
 # queue new Resque jobs, or be passed into a worker through a `connection` 
@@ -127,7 +127,7 @@ class Worker extends EventEmitter
 
   # PRIVATE METHODS
 
-  # Polls the next queue for a job.  
+  # Polls the next queue for a job.
   #
   # title - The title to set on the running process (optional).
   #
@@ -156,10 +156,10 @@ class Worker extends EventEmitter
     @procline "#{@queue} job since #{(new Date).toString()}"
     if cb = @callbacks[job.class]
       cb job.args..., (result) =>
-        try 
-          if result instanceof Error 
+        try
+          if result instanceof Error
             @fail result, job
-          else 
+          else
             @succeed result, job
         finally
           @poll old_title
@@ -259,10 +259,11 @@ class Worker extends EventEmitter
   # Returns a Hash.
   failurePayload: (err, job) ->
     worker:    @name
-    error:     err.error or 'unspecified'
+    queue:     @queue
     payload:   job
-    exception: err.exception or 'generic'
-    backtrace: err.backtrace or ['unknown']
+    exception: 'Error'
+    error:     err.toString()
+    backtrace: err.stack.split '\n'
     failed_at: (new Date).toString()
 
   Object.defineProperty @prototype, 'name',

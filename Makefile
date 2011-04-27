@@ -15,9 +15,9 @@ publish: generate-js
 	npm publish
 	@remove-js
 
-install: generate-js
-	@test `which npm` || echo 'You need npm to do npm install... makes sense?'
-	npm install
+link: generate-js
+	@test `which npm` || echo 'You need npm to do npm link... makes sense?'
+	npm link
 	@remove-js
 
 dev: generate-js
