@@ -263,7 +263,7 @@ class Worker extends EventEmitter
     payload:   job
     exception: 'Error'
     error:     err.toString()
-    backtrace: err.stack.split '\n'
+    backtrace: err.stack.split('\n')[1...]
     failed_at: (new Date).toString()
 
   Object.defineProperty @prototype, 'name',
