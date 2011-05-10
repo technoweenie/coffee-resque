@@ -275,7 +275,9 @@ class Worker extends EventEmitter
         name
 
 connectToRedis = (options) ->
-  require('redis').createClient options.port, options.host
+  redis = require('redis').createClient options.port, options.host
+  redis.auth(options.password) if options.password
+  redis
 
 exports.Connection = Connection
 exports.Worker     = Worker
