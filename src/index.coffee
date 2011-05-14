@@ -5,13 +5,16 @@ exports.version    = "0.1.3"
 # option.
 #
 # options - Optional Hash of options.
+#           redis     - An existing redis connection to use.
 #           host      - String Redis host.  (Default: Redis' default)
 #           port      - Integer Redis port.  (Default: Redis' default)
+#           password  - String Redis password.
 #           namespace - String namespace prefix for Redis keys.
 #                       (Default: resque).
+#           callbacks - Object containing defined job functions.
 #           timeout   - Integer timeout in milliseconds to pause polling if
 #                       the queue is empty.
-#           database  - Optional Integer of the Redis database to select.
+#           database  - Integer of the Redis database to select.
 #
 # Returns a Connection instance.
 exports.connect = (options) ->
