@@ -1,4 +1,4 @@
-exports.version    = "0.1.3"
+exports.version = '0.1.4'
 
 # Sets up a new Resque Connection.  This Connection can either be used to
 # queue new Resque jobs, or be passed into a worker through a `connection`
