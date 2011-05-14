@@ -1,15 +1,15 @@
 exports.version    = "0.1.3"
 
-# Sets up a new Resque Connection.  This Connection can either be used to 
-# queue new Resque jobs, or be passed into a worker through a `connection` 
+# Sets up a new Resque Connection.  This Connection can either be used to
+# queue new Resque jobs, or be passed into a worker through a `connection`
 # option.
 #
 # options - Optional Hash of options.
 #           host      - String Redis host.  (Default: Redis' default)
 #           port      - Integer Redis port.  (Default: Redis' default)
-#           namespace - String namespace prefix for Redis keys.  
+#           namespace - String namespace prefix for Redis keys.
 #                       (Default: resque).
-#           timeout   - Integer timeout in milliseconds to pause polling if 
+#           timeout   - Integer timeout in milliseconds to pause polling if
 #                       the queue is empty.
 #           database  - Optional Integer of the Redis database to select.
 #
@@ -112,7 +112,7 @@ class Worker extends EventEmitter
       @running = true
 
   # Public: Stops polling and purges this Worker's stats from Redis.
-  # 
+  #
   # cb - Optional Function callback.
   #
   # Returns nothing.
@@ -275,7 +275,9 @@ class Worker extends EventEmitter
         name
 
 connectToRedis = (options) ->
-  require('redis').createClient options.port, options.host
+  redis = require('redis').createClient options.port, options.host
+  redis.auth options.password if options.password?
+  redis
 
 exports.Connection = Connection
 exports.Worker     = Worker
