@@ -6,21 +6,27 @@ Coffeescript/Node.js port of Resque.
 
 First, you'll want to queue some jobs in your app:
 
+```javascript
     var resque = require('coffee-resque').connect({
       host: redisHost,
       port: redisPort
     });
     resque.enqueue('math', 'add', [1,2]);
+```
 
-Next, you'll want to setup a worker to handle these jobs.   Upon
-completion of the job invoke the passed callback with a result,
-if a result was produced by the job, or an Error if an error was
-encountered.  If an Error instance is received, resque fails the
-job, in all other cases it assumes the job was successfully.
-The callback is important as it notifies resque that the worker
+Next, you'll want to setup a worker to handle these jobs.   
+
+Upon completion of the job, invoke the passed callback with a result 
+(if a result was produced by the job) or an `Error` (if an error was
+encountered).  If an `Error` is received, resque fails the
+job. In all other cases resque assumes the job is successful.
+
+The callback is important—it notifies resque that the worker
 has completed the current job and is ready for another.
+
 Neglecting to invoke the callback will result in worker starvation.
 
+```javascript
     // implement your job functions.
     var myJobs = {
       add: function(a, b, callback) { callback(a + b); },
@@ -49,6 +55,7 @@ Neglecting to invoke the callback will result in worker starvation.
     worker.on('success', function(worker, queue, job, result) {})
 
     worker.start()
+```
 
 ## Development
 
@@ -57,16 +64,22 @@ published to npm.
 
 For normal development, all you need to be concerned about is testing:
 
+```bash
   $ make test
+```
 
 If you need to generate javascript for production purposes and don't want to use npm packages, you can use:
 
+```bash
   $ make generate-js
   $ make remove-js
+```
 
-You can also have coffeescript watch the src directory and generate javascript files as they're updated.
+You can also have coffeescript watch the `src` directory and generate Javascript files as they're updated.
 
+```bash
   $ make dev
+```
 
 ## TODO
 
