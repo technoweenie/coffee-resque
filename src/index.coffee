@@ -264,8 +264,8 @@ class Worker extends EventEmitter
     worker:    @name
     queue:     @queue
     payload:   job
-    exception: 'Error'
-    error:     err.toString()
+    exception: err.name
+    error:     err.message
     backtrace: err.stack.split('\n')[1...]
     failed_at: (new Date).toString()
 
