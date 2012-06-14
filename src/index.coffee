@@ -1,4 +1,4 @@
-exports.version = '0.1.4'
+exports.version = '0.1.6'
 
 # Sets up a new Resque Connection.  This Connection can either be used to
 # queue new Resque jobs, or be passed into a worker through a `connection`
@@ -172,7 +172,7 @@ class Worker extends EventEmitter
 
   # Tracks stats for successfully completed jobs.
   #
-  # result - The result produced by the job. 
+  # result - The result produced by the job.
   # job    - The parsed Job object that is being run.
   #
   # Returns nothing.
