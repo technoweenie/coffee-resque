@@ -123,6 +123,7 @@ class Worker extends EventEmitter
     @running = false
     @untrack()
     @redis.del [
+      @conn.key('worker', @name)
       @conn.key('worker', @name, 'started')
       @conn.key('stat', 'failed', @name)
       @conn.key('stat', 'processed', @name)
@@ -157,6 +158,11 @@ class Worker extends EventEmitter
     old_title = process.title
     @emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
+    @redis.set @conn.key('worker', @name), JSON.stringify({
+      run_at: (new Date).toString(),
+      queue: @queue,
+      payload: job
+    })
     if cb = @callbacks[job.class]
       cb job.args..., (result) =>
         try
@@ -200,6 +206,7 @@ class Worker extends EventEmitter
   # Returns nothing.
   pause: ->
     @procline "Sleeping for #{@conn.timeout/1000}s"
+    @redis.del @conn.key('worker', @name)
     setTimeout =>
       return if !@running
       @poll()
