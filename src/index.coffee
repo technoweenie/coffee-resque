@@ -205,6 +205,7 @@ class Worker extends EventEmitter
   # Returns nothing.
   pause: ->
     @procline "Sleeping for #{@conn.timeout/1000}s"
+    @redis.del(@conn.key('worker', @name));
     setTimeout =>
       return if !@running
       @poll()
