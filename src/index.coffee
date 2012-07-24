@@ -157,6 +157,11 @@ class Worker extends EventEmitter
     old_title = process.title
     @emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
+    @redis.set @conn.key('worker', @name), JSON.stringify({
+      run_at: (new Date).toString(),
+      queue: @queue,
+      payload: job
+    })
     if cb = @callbacks[job.class]
       cb job.args..., (result) =>
         try
