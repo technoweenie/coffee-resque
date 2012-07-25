@@ -158,12 +158,8 @@ class Worker extends EventEmitter
     old_title = process.title
     @emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
-    @redis.set @conn.key('worker', @name), JSON.stringify({
-      run_at: (new Date).toString(),
-      queue: @queue,
-      payload: job
-    })
     if cb = @callbacks[job.class]
+      @workingOn job
       cb job.args..., (result) =>
         try
           if result instanceof Error
@@ -171,6 +167,7 @@ class Worker extends EventEmitter
           else
             @succeed result, job
         finally
+          @doneWorking()
           @poll old_title
     else
       @fail new Error("Missing Job: #{job.class}"), job
@@ -206,11 +203,26 @@ class Worker extends EventEmitter
   # Returns nothing.
   pause: ->
     @procline "Sleeping for #{@conn.timeout/1000}s"
-    @redis.del @conn.key('worker', @name)
     setTimeout =>
       return if !@running
       @poll()
     , @conn.timeout
+
+  # Sets the job that this is currently working on in a key
+  # so it can be monitored with resque-web.
+  #
+  # Returns nothing.
+  workingOn: (job) ->
+    @redis.set @conn.key('worker', @name), JSON.stringify
+      run_at:  (new Date).toString()
+      queue:   @queue
+      payload: job
+
+  # Delete the key holding the current job this is working on.
+  #
+  # Returns nothing.
+  doneWorking: ->
+    @redis.del @conn.key('worker', @name)
 
   # Tracks this worker's name in Redis.
   #
