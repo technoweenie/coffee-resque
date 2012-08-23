@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/technoweenie/coffee-resque.png)](http://travis-ci.org/technoweenie/coffee-resque)
 # Coffee-Resque
 
 Coffeescript/Node.js port of Resque.
