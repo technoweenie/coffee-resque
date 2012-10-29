@@ -122,12 +122,7 @@ class Worker extends EventEmitter
   end: (cb) ->
     @running = false
     @untrack()
-    @redis.del [
-      @conn.key('worker', @name)
-      @conn.key('worker', @name, 'started')
-      @conn.key('stat', 'failed', @name)
-      @conn.key('stat', 'processed', @name)
-    ], cb
+    @redis.del @conn.key('worker', @name), @conn.key('worker', @name, 'started'), @conn.key('stat', 'failed', @name), @conn.key('stat', 'processed', @name), cb
 
   # PRIVATE METHODS
 
