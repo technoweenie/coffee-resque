@@ -127,7 +127,7 @@ class Worker extends EventEmitter
       @conn.key('worker', @name, 'started')
       @conn.key('stat', 'failed', @name)
       @conn.key('stat', 'processed', @name)
-    ], cb
+    ], cb || ->
 
   # PRIVATE METHODS
 
