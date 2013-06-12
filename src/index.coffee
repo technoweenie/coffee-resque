@@ -159,18 +159,21 @@ class Worker extends EventEmitter
     @procline "#{@queue} job since #{(new Date).toString()}"
     if cb = @callbacks[job.class]
       @workingOn job
-      cb job.args..., (result) =>
-        try
-          if result instanceof Error
-            @fail result, job
-          else
-            @succeed result, job
-        finally
-          @doneWorking()
-          @poll old_title
+      try
+        cb job.args..., (result) =>
+          try
+            if result instanceof Error
+              @fail result, job
+            else
+              @succeed result, job
+          finally
+            @doneWorking()
+            process.nextTick ( => @poll old_title )
+      catch error
+        @fail new Error(error), job
     else
       @fail new Error("Missing Job: #{job.class}"), job
-      @poll old_title
+      process.nextTick ( => @poll old_title )
 
   # Tracks stats for successfully completed jobs.
   #
