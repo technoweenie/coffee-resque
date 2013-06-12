@@ -136,18 +136,17 @@ class Worker extends EventEmitter
   # title - The title to set on the running process (optional).
   #
   # Returns nothing.
-  poll: (title) ->
+  poll: (title, nQueue = 0) ->
     return unless @running
     process.title = title if title
-    @queue = @queues.shift()
-    @queues.push @queue
+    @queue = @queues[nQueue]
     @emit 'poll', @, @queue
     @redis.lpop @conn.key('queue', @queue), (err, resp) =>
       if !err && resp
         @perform JSON.parse(resp.toString())
       else
         @emit 'error', err, @, @queue if err
-        @pause()
+        if nQueue == @queues.length - 1 then process.nextTick => @pause() else process.nextTick => @poll title, nQueue+1
 
   # Handles the actual running of the job.
   #
