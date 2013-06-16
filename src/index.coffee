@@ -146,7 +146,10 @@ class Worker extends EventEmitter
         @perform JSON.parse(resp.toString())
       else
         @emit 'error', err, @, @queue if err
-        if nQueue == @queues.length - 1 then process.nextTick => @pause() else process.nextTick => @poll title, nQueue+1
+        if nQueue == @queues.length - 1
+          process.nextTick => @pause()
+        else
+          process.nextTick => @poll title, nQueue+1
 
   # Handles the actual running of the job.
   #
@@ -171,6 +174,8 @@ class Worker extends EventEmitter
             process.nextTick ( => @poll old_title )
       catch error
         @fail new Error(error), job
+        @doneWorking()
+        process.nextTick ( => @poll old_title )
     else
       @fail new Error("Missing Job: #{job.class}"), job
       process.nextTick ( => @poll old_title )
