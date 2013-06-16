@@ -136,18 +136,17 @@ class Worker extends EventEmitter
   # title - The title to set on the running process (optional).
   #
   # Returns nothing.
-  poll: (title) ->
+  poll: (title, nQueue = 0) ->
     return unless @running
     process.title = title if title
-    @queue = @queues.shift()
-    @queues.push @queue
+    @queue = @queues[nQueue]
     @emit 'poll', @, @queue
     @redis.lpop @conn.key('queue', @queue), (err, resp) =>
       if !err && resp
         @perform JSON.parse(resp.toString())
       else
         @emit 'error', err, @, @queue if err
-        @pause()
+        if nQueue == @queues.length - 1 then process.nextTick => @pause() else process.nextTick => @poll title, nQueue+1
 
   # Handles the actual running of the job.
   #
@@ -160,18 +159,21 @@ class Worker extends EventEmitter
     @procline "#{@queue} job since #{(new Date).toString()}"
     if cb = @callbacks[job.class]
       @workingOn job
-      cb job.args..., (result) =>
-        try
-          if result instanceof Error
-            @fail result, job
-          else
-            @succeed result, job
-        finally
-          @doneWorking()
-          @poll old_title
+      try
+        cb job.args..., (result) =>
+          try
+            if result instanceof Error
+              @fail result, job
+            else
+              @succeed result, job
+          finally
+            @doneWorking()
+            process.nextTick ( => @poll old_title )
+      catch error
+        @fail new Error(error), job
     else
       @fail new Error("Missing Job: #{job.class}"), job
-      @poll old_title
+      process.nextTick ( => @poll old_title )
 
   # Tracks stats for successfully completed jobs.
   #

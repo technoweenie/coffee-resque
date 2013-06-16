@@ -22,14 +22,14 @@ worker.on 'job', (worker, queue, job) ->
 
 worker.on 'success', (worker, queue, job) ->
   stats.success.push job.args[0]
-  if stats.success.length == 3
-    countStats()
 
 worker.on 'error', (err, worker, queue, job) ->
   stats.error.push job.args[0]
 
 worker.on 'poll', (worker, queue) ->
   stats.polls += 1
+  if stats.polls == 7
+    countStats()
 
 worker.start()
 
@@ -52,11 +52,11 @@ calls = 0
 process.on 'exit', ->
   assert.ok stats.polls > 5
   assert.deepEqual ['test',  'first'],   stats.jobs[0]
-  assert.deepEqual ['test2', 'missing'], stats.jobs[1]
-  assert.deepEqual ['test',  'fail'],    stats.jobs[2]
-  assert.deepEqual ['test',  'second'],  stats.jobs[3]
-  assert.deepEqual ['test',  'last'],    stats.jobs[4]
-  assert.deepEqual ['missing', 'fail'],  stats.error
+  assert.deepEqual ['test',  'fail'],    stats.jobs[1]
+  assert.deepEqual ['test',  'second'],  stats.jobs[2]
+  assert.deepEqual ['test',  'last'],    stats.jobs[3]
+  assert.deepEqual ['test2', 'missing'], stats.jobs[4]
+  assert.deepEqual ['fail', 'missing'],  stats.error
   assert.deepEqual ['first', 'second', 'last'], stats.success
   assert.equal 4, calls
   console.log '.'
