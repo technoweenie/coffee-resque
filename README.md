@@ -58,7 +58,7 @@ worker.start()
 
 ## Worker Polling Mechanism
 
-As of <NEW_VERSION>, workers poll the given queues similar to [Ruby Resque](https://github.com/resque/resque):
+As of v0.1.9, workers poll the given queues similar to [Ruby Resque](https://github.com/resque/resque):
 
 ```
 start
@@ -75,7 +75,7 @@ shutdown
 This ensures that multiple queues are polled in the priority mentioned.  Eg: If a worker is started on "queue1,queue2",
 queue1 is drained completely before jobs in queue2 are processed.
 
-Prior to <NEW_VERSION>, workers used to poll the queues in a round-robin fashion.
+Prior to v0.1.9, workers used to poll the queues in a round-robin fashion.
 
 ## Development
 
