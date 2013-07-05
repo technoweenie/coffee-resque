@@ -10,5 +10,8 @@
   "directories"  : {"lib"  : "./lib"},
   "repository"   : {"type" : "git",  "url": "https://github.com/technoweenie/coffee-resque.git"},
   "dependencies" : {"redis": ">= 0.5.2"},
-  "engines"      : {"node" : ">= 0.2.6"}
+  "engines"      : {"node" : ">= 0.2.6"},
+  "scripts"      : {
+    "postinstall": "echo Update Notes: The worker polling mechanism was changed with this version to make coffee-resque workers behave similar to Ruby Resque workers. Please read about it in the README file."
+  }
 }
