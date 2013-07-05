@@ -56,6 +56,27 @@ worker.on('success', function(worker, queue, job, result) {})
 worker.start()
 ```
 
+## Worker Polling Mechanism
+
+As of <NEW_VERSION>, workers poll the given queues similar to [Ruby Resque](https://github.com/resque/resque):
+
+```
+start
+loop do
+  if job = reserve
+    job.process
+  else
+    sleep 5 # Polling frequency = 5
+  end
+end
+shutdown
+```
+
+This ensures that multiple queues are polled in the priority mentioned.  Eg: If a worker is started on "queue1,queue2",
+queue1 is drained completely before jobs in queue2 are processed.
+
+Prior to <NEW_VERSION>, workers used to poll the queues in a round-robin fashion.
+
 ## Development
 
 All code is written in Coffee Script and converted to javascript as it's
