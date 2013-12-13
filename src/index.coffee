@@ -37,12 +37,19 @@ class Connection
   # queue - String queue name.
   # func  - String name of the function to run.
   # args  - Optional Array of arguments to pass.
+  # done  - Optional callback when job is enqueued to Redis.
   #
   # Returns nothing.
-  enqueue: (queue, func, args) ->
+  enqueue: (queue, func, args, done) ->
+    if typeof args is "function"
+      # no args passed - it's callback
+      done = args
+      args = []
+
     @redis.sadd  @key('queues'), queue
     @redis.rpush @key('queue', queue),
-      JSON.stringify class: func, args: args || []
+      (JSON.stringify class: func, args: args || []),
+      done
 
   # Public: Creates a single Worker from this Connection.
   #
