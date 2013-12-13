@@ -11,7 +11,6 @@ var resque = require('coffee-resque').connect({
   host: redisHost,
   port: redisPort
 });
-<<<<<<< HEAD
 resque.enqueue('math', 'add', [1,2], function(err, remainingJobs) {
   console.log('New job queued. Remaining jobs in queue: ' + remainingJobs);
 });
