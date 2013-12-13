@@ -11,7 +11,9 @@ var resque = require('coffee-resque').connect({
   host: redisHost,
   port: redisPort
 });
-resque.enqueue('math', 'add', [1,2]);
+resque.enqueue('math', 'add', [1,2], function(err, reply) {
+  console.log('job queued');
+});
 ```
 
 Next, you'll want to setup a worker to handle these jobs.   
