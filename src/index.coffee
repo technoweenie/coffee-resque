@@ -139,17 +139,18 @@ class Worker extends EventEmitter
   poll: (title, nQueue = 0) ->
     return unless @running
     process.title = title if title
-    @queue = @queues[nQueue]
-    @emit 'poll', @, @queue
-    @redis.lpop @conn.key('queue', @queue), (err, resp) =>
+
+    params = @queues.map (item) => @conn.key('queue', item)
+    params.push @conn.timeout
+    params.push (err, resp) =>
       if !err && resp
-        @perform JSON.parse(resp.toString())
+        job = JSON.parse resp[1].toString()
+        job.key = resp[0]
+        @perform job
       else
         @emit 'error', err, @, @queue if err
-        if nQueue == @queues.length - 1
-          process.nextTick => @pause()
-        else
-          process.nextTick => @poll title, nQueue+1
+
+    @redis.blpop.apply @redis, params
 
   # Handles the actual running of the job.
   #
@@ -157,6 +158,7 @@ class Worker extends EventEmitter
   #
   # Returns nothing.
   perform: (job) ->
+    console.log(job)
     old_title = process.title
     @emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
