@@ -48,7 +48,7 @@ class Connection
 
     @redis.sadd  @key('queues'), queue
     @redis.rpush @key('queue', queue),
-      (JSON.stringify class: func, args: args),
+      JSON.stringify(class: func, args: args || []),
       callback
 
   # Public: Creates a single Worker from this Connection.
