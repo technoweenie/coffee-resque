@@ -34,17 +34,14 @@ class Connection
 
   # Public: Queues a job in a given queue to be run.
   #
-  # queue - String queue name.
-  # func  - String name of the function to run.
-  # args  - Optional Array of arguments to pass.
+  # queue     - String queue name.
+  # func      - String name of the function to run.
+  # args      - Optional Array of arguments to pass.
   # callback  - Optional callback when job is enqueued to Redis.
   #
   # Returns nothing.
   enqueue: (queue, func, args, callback) ->
-    if typeof args is "function"
-      # no args passed - it's callback
-      callback = args
-      args = []
+    [callback, args] = [args, []] if typeof args is 'function'
 
     @redis.sadd  @key('queues'), queue
     @redis.rpush @key('queue', queue),
