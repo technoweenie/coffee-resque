@@ -1,6 +1,6 @@
 {
   "name"         : "coffee-resque",
-  "version"      : "0.1.10",
+  "version"      : "0.1.11",
   "description"  : "Coffeescript/Node.js port of Resque",
   "keywords"     : ["resque", "redis", "queue", "coffee script"],
   "homepage"     : "https://github.com/technoweenie/coffee-resque",
@@ -12,6 +12,6 @@
   "dependencies" : {"redis": ">= 0.5.2"},
   "engines"      : {"node" : ">= 0.2.6"},
   "scripts"      : {
-    "postinstall": "echo Update Notes: The worker polling mechanism was changed with this version to make coffee-resque workers behave similar to Ruby Resque workers. Please read about it in the README file."
+    "postinstall": "echo Update Notes: Connection#enqueue now accepts an optional callback."
   }
 }
