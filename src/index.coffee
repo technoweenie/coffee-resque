@@ -43,12 +43,10 @@ class Connection
   enqueue: (queue, func, args, callback) ->
     [callback, args] = [args, []] if typeof args is 'function'
 
-    if callback is undefined then callback = -> {}
-
     @redis.sadd  @key('queues'), queue
     @redis.rpush @key('queue', queue),
       JSON.stringify(class: func, args: args || []),
-      callback
+      callback || -> {}
 
   # Public: Creates a single Worker from this Connection.
   #
