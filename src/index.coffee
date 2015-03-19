@@ -60,7 +60,7 @@ class Connection
   #
   # Returns nothing.
   size: (queue, callback) ->
-    @redis.llen this.key('queue', queue), callback
+    @redis.llen @key('queue', queue), callback
 
 
   # Public: Creates a single Worker from this Connection.
