@@ -48,6 +48,21 @@ class Connection
       JSON.stringify(class: func, args: args || []),
       callback
 
+
+
+  # Public: Gets number of jobs in queue.
+  #
+  # queue     - String queue name.
+  # callback  - Callback with signature (err, response) to run when size is retrieved.
+  #             Err contains the error if there was an issue retrieving the size. If
+  #             there is no error, err will be null and response will contain the size
+  #             as an integer.
+  #
+  # Returns nothing.
+  size: (queue, callback) ->
+    @redis.llen @key('queue', queue), callback
+
+
   # Public: Creates a single Worker from this Connection.
   #
   # queues    - Either a comma separated String or Array of queue names.
