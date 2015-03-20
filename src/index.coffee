@@ -44,9 +44,8 @@ class Connection
     [callback, args] = [args, []] if typeof args is 'function'
 
     @redis.sadd  @key('queues'), queue
-    @redis.rpush @key('queue', queue),
-      JSON.stringify(class: func, args: args || []),
-      callback || -> {}
+    job = JSON.stringify(class: func, args: args || [])
+    @redis.rpush [@key('queue', queue), job], callback || ->
 
   # Public: Creates a single Worker from this Connection.
   #
