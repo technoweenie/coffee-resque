@@ -45,7 +45,7 @@ class Connection
 
     @redis.sadd  @key('queues'), queue
     job = JSON.stringify(class: func, args: args || [])
-    @redis.rpush [@key('queue', queue), job], callback || ->
+    @redis.rpush @key('queue', queue), job, callback || ->
 
   # Public: Gets number of jobs in queue.
   #
