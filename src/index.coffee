@@ -17,8 +17,8 @@ exports.version = '0.1.11'
 #           database  - Integer of the Redis database to select.
 #
 # Returns a Connection instance.
-exports.connect = (options) ->
-  new exports.Connection options || {}
+exports.connect = (options = {}) ->
+  new exports.Connection options
 
 EventEmitter = require('events').EventEmitter
 
@@ -318,7 +318,10 @@ class Worker extends EventEmitter
         name
 
 connectToRedis = (options) ->
-  redis = require('redis').createClient options.port, options.host
+  redis = require('redis').createClient(
+    options.port || 6379,
+    options.host || '127.0.0.1'
+  )
   redis.auth options.password if options.password?
   redis
 
