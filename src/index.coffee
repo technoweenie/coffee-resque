@@ -45,7 +45,7 @@ class Connection
 
     @redis.sadd  @key('queues'), queue
     job = JSON.stringify(class: func, args: args || [])
-    @redis.rpush @key('queue', queue), job, callback || ->
+    @redis.rpush @key('queue', queue), job, callback || noop
 
   # Public: Gets number of jobs in queue.
   #
@@ -131,10 +131,10 @@ class Worker extends EventEmitter
 
   # Public: Stops polling and purges this Worker's stats from Redis.
   #
-  # cb - Optional Function callback.
+  # callback - Optional Function callback.
   #
   # Returns nothing.
-  end: (cb) ->
+  end: (callback) ->
     @running = false
     @untrack()
     @redis.del [
@@ -142,7 +142,7 @@ class Worker extends EventEmitter
       @conn.key('worker', @name, 'started')
       @conn.key('stat', 'failed', @name)
       @conn.key('stat', 'processed', @name)
-    ], cb || ->
+    ], callback || noop
 
   # PRIVATE METHODS
 
@@ -175,10 +175,10 @@ class Worker extends EventEmitter
     old_title = process.title
     @emit 'job', @, @queue, job
     @procline "#{@queue} job since #{(new Date).toString()}"
-    if cb = @callbacks[job.class]
+    if callback = @callbacks[job.class]
       @workingOn job
       try
-        cb job.args..., (result) =>
+        callback job.args..., (result) =>
           try
             if result instanceof Error
               @fail result, job
@@ -262,11 +262,11 @@ class Worker extends EventEmitter
   # Initializes this Worker's start date in Redis.
   #
   # Returns nothing.
-  init: (cb) ->
+  init: (callback) ->
     @track()
     args = [@conn.key('worker', @name, 'started'), (new Date).toString()]
     @procline "Processing #{@queues.toString} since #{args.last}"
-    args.push cb if cb
+    args.push callback if callback
     @redis.set args...
 
   # Ensures that the given @queues value is in the right format.
@@ -323,6 +323,8 @@ connectToRedis = (options) ->
   )
   redis.auth options.password if options.password?
   redis
+
+noop = ->
 
 exports.Connection = Connection
 exports.Worker     = Worker
