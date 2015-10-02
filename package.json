@@ -9,7 +9,7 @@
   "main"         : "./lib/index",
   "directories"  : {"lib"  : "./lib"},
   "repository"   : {"type" : "git",  "url": "https://github.com/technoweenie/coffee-resque.git"},
-  "dependencies" : {"redis": ">= 0.5.2"},
+  "dependencies" : {"redis": "1.0.0"},
   "engines"      : {"node" : ">= 0.2.6"},
   "scripts"      : {
     "postinstall": "echo Update Notes: Connection#enqueue now accepts an optional callback."
