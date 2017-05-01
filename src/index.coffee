@@ -174,7 +174,7 @@ class Worker extends EventEmitter
   perform: (job) ->
     old_title = process.title
     @emit 'job', @, @queue, job
-    @procline "#{@queue} job since #{(new Date).toString()}"
+    #@procline "#{@queue} job since #{(new Date).toString()}"
     if cb = @callbacks[job.class]
       @workingOn job
       try
@@ -224,7 +224,7 @@ class Worker extends EventEmitter
   #
   # Returns nothing.
   pause: ->
-    @procline "Sleeping for #{@conn.timeout/1000}s"
+    #@procline "Sleeping for #{@conn.timeout/1000}s"
     setTimeout =>
       return if !@running
       @poll()
